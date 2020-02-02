@@ -13,9 +13,9 @@ class GeneticAlgo {
 	private int popSize = 15000;
 	private int nbrSampleSelection = 50;
 	private int nbrCrossPoint = 10;
-	private double mutRate = 0.1;
+	private double mutRate = 1;
 	private double mutVal = 0.1;
-	private double crossRate = 0.95;
+	private double crossRate = 90;
 	enum StopCond {
 		CONTINUE,
 		STOP
@@ -24,14 +24,30 @@ class GeneticAlgo {
 	private ArrayList<double[]> sampTemp = new ArrayList<double[]>();
 	private double[] valFitArray;
 	private StopCond stopCondition;
-	private int indexOfAcceptableSolution;
+	private int solIndexx;
+	private int convergeCounter;
+	private double converge;
+	private double convergeOld;
 
+	/**
+	 * @desc Genetic algorithm for the problem 1 in the assessment
+	 * @param /
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	GeneticAlgo() {
+		convergeCounter = 0;
 		stopCondition = StopCond.CONTINUE;
 		createSamplesArrays();
 		valFitArray = new double[popSize];
 	}
 
+	/**
+	 * @desc create the samples for creating the population (in arraylist)
+	 * @param /
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	private void createSamplesArrays() {
 		for (int i = 0; i < popSize; i++) {
 			double[] temp = new double[solSize];
@@ -42,111 +58,201 @@ class GeneticAlgo {
 		}
 	}
 
-	private void updateFitnessValuesCurrentPopulation() {
-		double min = -1;
-		int index = -1;
+	/**
+	 * @desc calc all the fitness in the population
+	 * @param /
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private void computeFitnessOnSample() {
+		double min = Assess.getTest1(samp.get(0));
+		int solIndex = 0;
 
 		for (int i = 0; i < popSize; i++) {
 			valFitArray[i] = Assess.getTest1(samp.get(i));
-			if (i == 0 || valFitArray[i] < min) {
+			if (valFitArray[i] < min) {
 				min = valFitArray[i];
-				index = i;
+				solIndex = i;
 			}
 		}
-		//System.out.println(min);
-		if (min == 0 || min < 1) {
+		if (min < 1) {
 			stopCondition = StopCond.STOP;
-			indexOfAcceptableSolution = index;
+			solIndexx = solIndex;
 		}
 	}
 
-	private double[] tournamentSelection() {
-		double min = -1;
-		int index = -1;
-		int tmpIdx;
+	/**
+	 * @desc selection function, select the best samples using tournament algo
+	 * @param
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private double[] selection() {
+		double min = valFitArray[0];
+		int selected_samp = 0;
+		int tmp;
 
 		for (int i = 0; i < nbrSampleSelection; i++) {
-			tmpIdx = (int)(Math.random() * popSize);
-			if (tmpIdx >= popSize) {
-				tmpIdx = popSize - 1;
+			tmp = (int)(Math.random() * popSize) % popSize;
+			while (tmp >= popSize) {
+				tmp = (int)(Math.random() * popSize) % popSize;
 			}
-			if (i == 0 || valFitArray[tmpIdx] < min) {
-				min = valFitArray[tmpIdx];
-				index = tmpIdx;
+			if (min > valFitArray[tmp]) {
+				min = valFitArray[tmp];
+				selected_samp = tmp;
 			}
 		}
 		//System.out.println(min);
-		return samp.get(index).clone();
+		converge_fct(min, selected_samp);
+		return samp.get(selected_samp).clone();
 	}
 
-	private void mutation(double[] solution) {
-		for (int i = 0; i < solution.length; i++) {
-			if (Math.random() < mutRate) {
-				solution[i] += (Math.random() - Math.random()) * mutVal;
+	private void converge_fct(double min, int selected_samp) {
+		if (convergeCounter == 0) {
+			converge = min;
+			convergeOld = 0;
+		}
+		convergeCounter += 1;
+		if (convergeCounter % 100000 == 0) {
+			convergeOld = converge;
+			converge = min;
+			System.out.println("--------------------------------------------------------------" + converge + " " + convergeOld);
+			//if (converge >= convergeOld * 0.9999999999999 && converge <= convergeOld * 1.0099999999999) {
+			if (converge - convergeOld < 0.001  && converge - convergeOld > -0.001) {
+				solIndexx = selected_samp;
+				stopCondition = StopCond.STOP;
 			}
 		}
 	}
 
-	private void crossover(double[] parent1, double[] parent2, int nbCrossoverPoints) {
-		if (Math.random() < crossRate) {
-			int rdmValue = (int)(Math.random() * nbCrossoverPoints);
-			int nbPoints = rdmValue >= 1 ? rdmValue : 1;
-			boolean odd = Math.random() > 0.5 ? true : false;
+	/**
+	 * @desc apply mutation on some candidates
+	 * @param candidate (double)
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private void mutOnCandidat(double[] solution) {
+		for (int i = 0; i < solution.length; i++) {
+			if (Math.random() * 100 < mutRate) {
+				solution[i] += (Math.random() * Math.random()  - Math.random() * Math.random()) * mutVal;
+			}
+		}
+	}
 
-			for (int i = 0; i < nbPoints; i++) {
-				for (int j = (int)((solSize / (float) nbPoints) * i);
-					 j < (int)((solSize / (float) nbPoints) * (i + 1)); j++) {
+	/**
+	 * @desc crossover on two candidates
+	 * @param candidate1 candidate2 nbrCrossoverPoints
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private void crossOnCandidat(double[] candidate1, double[] candidate2, int nbCrossoverPoints) {
+		int rdm;
+		int pointNbr;
+		if (Math.random() * 100 < crossRate) {
+			rdm = (int)(Math.random() * nbCrossoverPoints);
+			pointNbr = rdm >= 1 ? rdm : 1;
+			boolean odd = Math.random() > 0.5 ? true : false;
+			for (int i = 0; i < pointNbr; i++) {
+				for (int j = (int)((solSize / (float) pointNbr) * i);
+					 j < (int)((solSize / (float) pointNbr) * (i + 1)); j++) {
 					if (i % 2 == 0 && odd) {
-						parent1[j] = parent2[j];
+						candidate1[j] = candidate2[j];
 					} else if (i % 2 != 0 && !odd) {
-						parent1[j] = parent2[j];
+						candidate1[j] = candidate2[j];
 					}
 				}
 			}
 		}
 	}
+/*	private void crossOnCandidat(double[] candidate1, double[] candidate2, int nbCrossoverPoints) {
+		int rdm = 1;
+		int pointNbr = 1;
+		boolean isPair = true;
+		double random = Math.random() * 100;
+		if (random >= 50)
+			isPair = false;
+		if (Math.random() * 100 < crossRate) {
+			rdm = (int)((Math.random() * nbCrossoverPoints) % nbCrossoverPoints);
+			if (rdm != 0)
+				pointNbr = rdm;
+			for (int i = 0; i < pointNbr; i++) {
+				for (int j = (int)((solSize / (float) pointNbr) * i);
+					 j < (int)((solSize / (float) pointNbr) * (i + 1)); j++) {
+					if (i % 2 == 0 && isPair) {
+						candidate1[j] = candidate2[j];
+					} else if (i % 2 != 0 && !isPair) {
+						candidate1[j] = candidate2[j];
+					}
+				}
+			}
+		}
+	}*/
 
-	private void getNewPopulation() {
-		int tmpIdx;
-		ArrayList<double[]> tmp = new ArrayList<double[]>();
+	/**
+	 * @desc create concurre
+	 * @param
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private void createConcurrentSample() {
+		int index;
+		double[] solution;
+		ArrayList<double[]> temporary = new ArrayList<double[]>();
 
 		sampTemp.clear();
 		for (int i = 0; i < popSize; i++) {
-			double[] solution = tournamentSelection();
+			 solution = selection();
 
-			tmpIdx = (int)(Math.random() * popSize);
-			if (tmpIdx >= popSize) {
-				tmpIdx = popSize - 1;
+			index = (int)(Math.random() * popSize) % popSize;
+			while (index >= popSize) {
+				index = (int)(Math.random() * popSize) % popSize;
 			}
-			mutation(solution);
-			crossover(solution, samp.get(tmpIdx), nbrCrossPoint);
+			mutOnCandidat(solution);
+			crossOnCandidat(solution, samp.get(index), nbrCrossPoint);
 			sampTemp.add(solution);
 		}
-		tmp = samp;
+		temporary = samp;
 		samp = sampTemp;
-		sampTemp = tmp;
+		sampTemp = temporary;
 	}
 
+	/**
+	 * @desc
+	 * @param
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	private double[] try_one_more(double[] good) {
 		int to_ret = 0;
 		ArrayList<double[]> final_ar = new ArrayList<double[]>();
 		double min = 50.0;
 	
 		final_ar.add(good);
+		double[] roundOne = new double[solSize];
+		for(int r=0; r < good.length;r++) {
+			roundOne[r] = Math.round(good[r]*1000.0)/1000.0;
+		}
+		final_ar.add(roundOne);
 		for(int i = 0; i < good.length;i++) {
 			double[] solTest = new double[solSize];
 			double[] solTestR = new double[solSize];
 			double[] solTestRt = new double[solSize];
 			double[] solTest2dec = new double[solSize];
+			double[] solTest3decBisA = new double[solSize];
+			double[] solTest3decBisB = new double[solSize];
 			double[] solTest5dec = new double[solSize];
 			for (int j=0; j<solSize;j++) {
 				solTest[j] = good[i];
 				solTestR[j] = Math.round(good[i]*10000.0)/10000.0;
 				solTestRt[j] = Math.round(good[i]*1000.0)/1000.0;
+				solTest3decBisA[j] = solTestRt[j] + 0.001;
+				solTest3decBisB[j] = solTestRt[j] - 0.001;
 				solTest2dec[j] = Math.round(good[i]*100.0)/100.0;
 				solTest5dec[j] = Math.round(good[i]*100000.0)/100000.0;
 			}
 			final_ar.add(solTest);
+			final_ar.add(solTest3decBisA);
+			final_ar.add(solTest3decBisB);
 			final_ar.add(solTestR);
 			final_ar.add(solTestRt);
 			final_ar.add(solTest2dec);
@@ -161,12 +267,19 @@ class GeneticAlgo {
 		return final_ar.get(to_ret);
 	}
 
+	/**
+	 * @desc
+	 * @param
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	public double[] getSol() {
-		updateFitnessValuesCurrentPopulation();
+		computeFitnessOnSample();
+		// TODO delete this
 		while (stopCondition == StopCond.CONTINUE) {
-			getNewPopulation();
-			updateFitnessValuesCurrentPopulation();
+			createConcurrentSample();
+			computeFitnessOnSample();
 		}
-		return try_one_more(samp.get(indexOfAcceptableSolution));
+		return try_one_more(samp.get(solIndexx));
 	}
 }

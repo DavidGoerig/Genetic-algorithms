@@ -18,7 +18,8 @@ class Example {
 
 		GeneticAlgo ga = new GeneticAlgo();
 		double[] sol1 = ga.getSol();
-		boolean[] sol2 = GeneticAlgoBool.getSol();
+		GeneticAlgoBool gab = new GeneticAlgoBool();
+		boolean[] sol2 = gab.getSol();
 
 		//System.out.println("These are the instructions of how to use the problem library.  Please make sure you follow the instructions carefully.");
 
