@@ -1,40 +1,29 @@
-// Assessment 1 Bastien Lécussan
+/*
+ * Assessment 1
+ * David Goerig
+ * djg53
+ */
 
 import java.lang.Math;
 import java.util.*;
 
-// This class computes the genetic algorithm for the given problem 1 of the assessment.
-class Problem1 {
+class GeneticAlgo {
 
-	// The number of candidate into a solution.
 	private final int SOLUTION_SIZE = 20;
-	// The number of candidate into a population. (MUST CONTAINS AT LEAST 2 SOLUTIONS)
 	private final int POPULATION_SIZE = 15000;
-	// The mutation rate.
 	private final double MUTATION_RATE = 0.1;
-	// The mutation limit. If there is a mutation, the changes will be:
-	// VALUE - MUTATION_VALUE < NEW_VALUE < VALUE + MUTATION_VALUE
 	private final double MUTATION_VALUE = 0.1;
-	// The crossover rate.1
 	private final double CROSSOVER_RATE = 0.95;
-	// The number of particpant to the tournament selection.
 	private final int NB_PARTICIPANT_TOURNAMENT = 50;
-	// The number of crossover points into the crossover.
 	private final int NB_CROSSOVER_POINTS = 10;
 
-	// The array that contains all the current population.
 	private double[][] population;
-	// The array that contains the fitness values for each double[] into "population" array.
 	private double[] fitnessValues;
-	// The temporary array that contains the new population from the current population.
 	private double[][] newPopulation;
-	// It contains the previous closest fitness value to 0.
 	private boolean isAcceptable;
-	// It contains the index of this value in the population array.
 	private int indexOfAcceptableSolution;
 
-	// Intialize the different variables
-	Problem1() {
+	GeneticAlgo() {
 		population = getInitialPopulation();
 		fitnessValues = new double[POPULATION_SIZE];
 		newPopulation = new double[POPULATION_SIZE][SOLUTION_SIZE];
@@ -170,21 +159,25 @@ class Problem1 {
 			double[] solTest = new double[SOLUTION_SIZE];
 			double[] solTestR = new double[SOLUTION_SIZE];
 			double[] solTestRt = new double[SOLUTION_SIZE];
+			double[] solTest2dec = new double[SOLUTION_SIZE];
+			double[] solTest5dec = new double[SOLUTION_SIZE];
 			for (int j=0; j<SOLUTION_SIZE;j++) {
 				solTest[j] = good[i];
 				solTestR[j] = Math.round(good[i]*10000.0)/10000.0;
 				solTestRt[j] = Math.round(good[i]*1000.0)/1000.0;
+				solTest2dec[j] = Math.round(good[i]*100.0)/100.0;
+				solTest5dec[j] = Math.round(good[i]*100000.0)/100000.0;
 			}
 			final_ar.add(solTest);
 			final_ar.add(solTestR);
 			final_ar.add(solTestRt);
+			final_ar.add(solTest2dec);
+			final_ar.add(solTest5dec);
 		}
 		for (int f = 0; f<final_ar.size();f++) {
 			if(Assess.getTest1(final_ar.get(f)) < min) {
-				System.out.println("Fitness chelou= " + Assess.getTest1(final_ar.get(f)));
 				to_ret = f;
 				min = Assess.getTest1(final_ar.get(f));
-				System.out.println(min);
 			}
 		}
 		return final_ar.get(to_ret);
@@ -194,21 +187,12 @@ class Problem1 {
 	 * Find the solution of the given problem 1 through genetic algorithm.
 	 * @return The acceptable solution
 	 */
-	public double[] getSolution() {
+	public double[] getSol() {
 		updateFitnessValuesCurrentPopulation();
 		while (isAcceptable == false) {
 			getNewPopulation();
 			updateFitnessValuesCurrentPopulation();
 		}
 		return try_one_more(population[indexOfAcceptableSolution]);
-		/*for (int i = -50000; i < 50000; i++) {
-			for (int j=0; j < SOLUTION_SIZE; j++) {
-				population[0][j] = i / 10000.0;
-			}
-			if (Assess.getTest1(population[0]) == 0) {
-				return population[0];
-			}
-		}
-		return population[0];*/
 	}
 }
