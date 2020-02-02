@@ -116,7 +116,7 @@ class GeneticAlgo {
 		if (convergeCounter % 100000 == 0) {
 			convergeOld = converge;
 			converge = min;
-			System.out.println("--------------------------------------------------------------" + converge + " " + convergeOld);
+			//System.out.println("--------------------------------------------------------------" + converge + " " + convergeOld);
 			//if (converge >= convergeOld * 0.9999999999999 && converge <= convergeOld * 1.0099999999999) {
 			if (converge - convergeOld < 0.001  && converge - convergeOld > -0.001) {
 				solIndexx = selected_samp;
@@ -146,25 +146,6 @@ class GeneticAlgo {
 	 * @id djg53
 	 */
 	private void crossOnCandidat(double[] candidate1, double[] candidate2, int nbCrossoverPoints) {
-		int rdm;
-		int pointNbr;
-		if (Math.random() * 100 < crossRate) {
-			rdm = (int)(Math.random() * nbCrossoverPoints);
-			pointNbr = rdm >= 1 ? rdm : 1;
-			boolean odd = Math.random() > 0.5 ? true : false;
-			for (int i = 0; i < pointNbr; i++) {
-				for (int j = (int)((solSize / (float) pointNbr) * i);
-					 j < (int)((solSize / (float) pointNbr) * (i + 1)); j++) {
-					if (i % 2 == 0 && odd) {
-						candidate1[j] = candidate2[j];
-					} else if (i % 2 != 0 && !odd) {
-						candidate1[j] = candidate2[j];
-					}
-				}
-			}
-		}
-	}
-/*	private void crossOnCandidat(double[] candidate1, double[] candidate2, int nbCrossoverPoints) {
 		int rdm = 1;
 		int pointNbr = 1;
 		boolean isPair = true;
@@ -186,7 +167,7 @@ class GeneticAlgo {
 				}
 			}
 		}
-	}*/
+	}
 
 	/**
 	 * @desc create concurre

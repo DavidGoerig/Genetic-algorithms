@@ -9,11 +9,11 @@ import java.util.*;
 
 class GeneticAlgoBool {
 	private int solSize = 100;
-	private int popSize = 10000;
+	private int popSize = 100000;
 	private int nbrSampleSelection = 100;
 	private int nbrCrossPoint = 10;
-	private double mutRate = 1;
-	private double crossRate = 90;
+	private double mutRate = 20;
+	private double crossRate = 80;
 	enum StopCond {
 		CONTINUE,
 		STOP
@@ -23,6 +23,10 @@ class GeneticAlgoBool {
 	private ArrayList<double[]> valFitWeightArray;
 	private StopCond stopCondition;
 	private int solIndexx;
+	private long startT;
+
+	private boolean[] solution;
+	private double globalMax = 0;
 
 	/**
 	 * @desc Genetic algorithm for the problem 1 in the assessment
@@ -30,9 +34,10 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	GeneticAlgoBool() {
+	GeneticAlgoBool(long startT) {
+		this.startT = startT;
 		stopCondition = StopCond.CONTINUE;
-		createSamplesArrays();
+		createSamplesArraysB();
 		valFitWeightArray = new ArrayList<double[]>();
 	}
 
@@ -42,7 +47,7 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private void createSamplesArrays() {
+	private void createSamplesArraysB() {
 		for (int i = 0; i < popSize; i++) {
 			boolean[] temp = new boolean[solSize];
 			for (int j = 0; j < solSize; j++) {
@@ -58,22 +63,23 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private void computeFitnessOnSample() {
+	private void computeFitnessOnSampleB() {
 		double[] fit = Assess.getTest2(samp.get(0));
 		int solIndex = 0;
-		double min = fit[0];
+		double max = fit[0];
 		double weight = fit[1];
 
 		for (int i = 0; i < popSize; i++) {
 			fit = Assess.getTest2(samp.get(i));
 			valFitWeightArray.add(fit);
-			if (fit[0] < min && fit[1] <= 500) {
-				min = fit[0];
+			if (fit[0] > max && fit[1] <= 500) {
+				max = fit[0];
 				weight = fit[1];
 				solIndex = i;
 			}
 		}
-		if (min == 0 && weight <= 500) {
+		long endT=System.currentTimeMillis();
+		if (((endT - startT)/1000.0) >= 15 ) {
 			stopCondition = StopCond.STOP;
 			solIndexx = solIndex;
 		}
@@ -85,9 +91,9 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private boolean[] selection() {
+	private boolean[] selectionB() {
 		double[] fit = Assess.getTest2(samp.get(0));
-		double min = fit[0];
+		double max = fit[0];
 		double weight = fit[1];
 
 		int selected_samp = 0;
@@ -99,14 +105,47 @@ class GeneticAlgoBool {
 				tmp = (int)(Math.random() * popSize) % popSize;
 			}
 			fit = valFitWeightArray.get(tmp);
-			if (min > fit[0]  && fit[1] <= 500) {
-				min = fit[0];
+			if (max < fit[0]  && fit[1] <= 600) {
+				max = fit[0];
 				weight = fit[1];
 				selected_samp = tmp;
 			}
 		}
-		//System.out.println(min);
+		if (max >= globalMax) {
+			globalMax = max;
+			solution = samp.get(selected_samp);
+		}
 		return samp.get(selected_samp).clone();
+	}
+
+	/**
+	 * @desc crossover on two candidates
+	 * @param candidate1 candidate2 nbrCrossoverPoints
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private void crossOnCandidatB(boolean[] candidate1, boolean[] candidate2, int nbCrossoverPoints) {
+		int rdm = 1;
+		int pointNbr = 1;
+		boolean isPair = true;
+		double random = Math.random() * 100;
+		if (random >= 50)
+			isPair = false;
+		if (Math.random() * 100 < crossRate) {
+			rdm = (int)((Math.random() * nbCrossoverPoints) % nbCrossoverPoints);
+			if (rdm != 0)
+				pointNbr = rdm;
+			for (int i = 0; i < pointNbr; i++) {
+				for (int j = (int)((solSize / (float) pointNbr) * i);
+					 j < (int)((solSize / (float) pointNbr) * (i + 1)); j++) {
+					if (i % 2 == 0 && isPair) {
+						candidate1[j] = candidate2[j];
+					} else if (i % 2 != 0 && !isPair) {
+						candidate1[j] = candidate2[j];
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -115,7 +154,7 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private void mutOnCandidat(boolean[] solution) {
+	private void mutOnCandidatB(boolean[] solution) {
 		for (int i = 0; i < solution.length; i++) {
 			if (Math.random() * 100 < mutRate) {
 				solution[i] = !solution[i];
@@ -129,20 +168,20 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private void createConcurrentSample() {
+	private void createConcurrentSampleB() {
 		int index;
 		ArrayList<boolean[]> temporary = new ArrayList<boolean[]>();
 
 		sampTemp.clear();
 		for (int i = 0; i < popSize; i++) {
-			boolean[] solution = selection();
+			boolean[] solution = selectionB();
 
 			index = (int)(Math.random() * popSize) % popSize;
 			while (index >= popSize) {
 				index = (int)(Math.random() * popSize) % popSize;
 			}
-			mutOnCandidat(solution);
-			// TODO crossOnCandidat(solution, samp.get(index), nbrCrossPoint);
+			mutOnCandidatB(solution);
+			crossOnCandidatB(solution, samp.get(index), nbrCrossPoint);
 			sampTemp.add(solution);
 		}
 		temporary = samp;
@@ -156,17 +195,19 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	public static boolean[] getSol() {
-		/*computeFitnessOnSample();
+	public boolean[] getSol() {
+		computeFitnessOnSampleB();
 		while (stopCondition == StopCond.CONTINUE) {
-			createConcurrentSample();
-			computeFitnessOnSample();
+			createConcurrentSampleB();
+			computeFitnessOnSampleB();
 		}
-		return samp.get(solIndexx);*/
-		boolean[] ret = new boolean[100];
+		if ((Assess.getTest2(samp.get(solIndexx)))[0] < (Assess.getTest2(solution)[0]))
+			return solution;
+		return samp.get(solIndexx);
+		/*boolean[] ret = new boolean[100];
 		for (int j = 0; j < 100; j++) {
 			ret[j] = (Math.random()>0.5);
 		}
-		return ret;
+		return ret;*/
 	}
 }
