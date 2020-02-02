@@ -20,30 +20,26 @@ class GeneticAlgo {
 		CONTINUE,
 		STOP
 	}
-	private ArrayList<double[]> samp;
-	private ArrayList<double[]> sampTemp;
+	private ArrayList<double[]> samp  = new ArrayList<double[]>();
+	private ArrayList<double[]> sampTemp = new ArrayList<double[]>();
 	private double[] valFitArray;
 	private StopCond stopCondition;
 	private int indexOfAcceptableSolution;
 
 	GeneticAlgo() {
-		samp = getInitialPopulation();
-		valFitArray = new double[popSize];
-		sampTemp = new ArrayList<double[]>();
 		stopCondition = StopCond.CONTINUE;
+		createSamplesArrays();
+		valFitArray = new double[popSize];
 	}
 
-	private ArrayList<double[]> getInitialPopulation() {
-		ArrayList<double[]> samp = new ArrayList<double[]>();
-
+	private void createSamplesArrays() {
 		for (int i = 0; i < popSize; i++) {
 			double[] temp = new double[solSize];
 			for (int j = 0; j < solSize; j++) {
 				temp[j] = Math.random() * Math.round(5.12 * (Math.random() - Math.random()));
 			}
-			samp.add(temp);
+			this.samp.add(temp);
 		}
-		return samp;
 	}
 
 	private void updateFitnessValuesCurrentPopulation() {
