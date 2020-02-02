@@ -9,54 +9,57 @@ import java.util.*;
 
 class GeneticAlgo {
 
-	private final int SOLUTION_SIZE = 20;
-	private final int POPULATION_SIZE = 15000;
-	private final double MUTATION_RATE = 0.1;
-	private final double MUTATION_VALUE = 0.1;
-	private final double CROSSOVER_RATE = 0.95;
-	private final int NB_PARTICIPANT_TOURNAMENT = 50;
-	private final int NB_CROSSOVER_POINTS = 10;
-
-	private ArrayList<double[]> population;
-	private double[] fitnessValues;
-	private ArrayList<double[]> newPopulation;
-	private boolean isAcceptable;
+	private int solSize = 20;
+	private int popSize = 15000;
+	private int nbrSampleSelection = 50;
+	private int nbrCrossPoint = 10;
+	private double mutRate = 0.1;
+	private double mutVal = 0.1;
+	private double crossRate = 0.95;
+	enum StopCond {
+		CONTINUE,
+		STOP
+	}
+	private ArrayList<double[]> samp;
+	private ArrayList<double[]> sampTemp;
+	private double[] valFitArray;
+	private StopCond stopCondition;
 	private int indexOfAcceptableSolution;
 
 	GeneticAlgo() {
-		population = getInitialPopulation();
-		fitnessValues = new double[POPULATION_SIZE];
-		newPopulation = new ArrayList<double[]>();
-		isAcceptable = false;
+		samp = getInitialPopulation();
+		valFitArray = new double[popSize];
+		sampTemp = new ArrayList<double[]>();
+		stopCondition = StopCond.CONTINUE;
 	}
 
 	private ArrayList<double[]> getInitialPopulation() {
-		ArrayList<double[]> population = new ArrayList<double[]>();
+		ArrayList<double[]> samp = new ArrayList<double[]>();
 
-		for (int i = 0; i < POPULATION_SIZE; i++) {
-			double[] temp = new double[SOLUTION_SIZE];
-			for (int j = 0; j < SOLUTION_SIZE; j++) {
+		for (int i = 0; i < popSize; i++) {
+			double[] temp = new double[solSize];
+			for (int j = 0; j < solSize; j++) {
 				temp[j] = Math.random() * Math.round(5.12 * (Math.random() - Math.random()));
 			}
-			population.add(temp);
+			samp.add(temp);
 		}
-		return population;
+		return samp;
 	}
 
 	private void updateFitnessValuesCurrentPopulation() {
 		double min = -1;
 		int index = -1;
 
-		for (int i = 0; i < POPULATION_SIZE; i++) {
-			fitnessValues[i] = Assess.getTest1(population.get(i));
-			if (i == 0 || fitnessValues[i] < min) {
-				min = fitnessValues[i];
+		for (int i = 0; i < popSize; i++) {
+			valFitArray[i] = Assess.getTest1(samp.get(i));
+			if (i == 0 || valFitArray[i] < min) {
+				min = valFitArray[i];
 				index = i;
 			}
 		}
 		//System.out.println(min);
 		if (min == 0 || min < 1) {
-			isAcceptable = true;
+			stopCondition = StopCond.STOP;
 			indexOfAcceptableSolution = index;
 		}
 	}
@@ -66,37 +69,37 @@ class GeneticAlgo {
 		int index = -1;
 		int tmpIdx;
 
-		for (int i = 0; i < NB_PARTICIPANT_TOURNAMENT; i++) {
-			tmpIdx = (int)(Math.random() * POPULATION_SIZE);
-			if (tmpIdx >= POPULATION_SIZE) {
-				tmpIdx = POPULATION_SIZE - 1;
+		for (int i = 0; i < nbrSampleSelection; i++) {
+			tmpIdx = (int)(Math.random() * popSize);
+			if (tmpIdx >= popSize) {
+				tmpIdx = popSize - 1;
 			}
-			if (i == 0 || fitnessValues[tmpIdx] < min) {
-				min = fitnessValues[tmpIdx];
+			if (i == 0 || valFitArray[tmpIdx] < min) {
+				min = valFitArray[tmpIdx];
 				index = tmpIdx;
 			}
 		}
 		//System.out.println(min);
-		return population.get(index).clone();
+		return samp.get(index).clone();
 	}
 
 	private void mutation(double[] solution) {
 		for (int i = 0; i < solution.length; i++) {
-			if (Math.random() < MUTATION_RATE) {
-				solution[i] += (Math.random() - Math.random()) * MUTATION_VALUE;
+			if (Math.random() < mutRate) {
+				solution[i] += (Math.random() - Math.random()) * mutVal;
 			}
 		}
 	}
 
 	private void crossover(double[] parent1, double[] parent2, int nbCrossoverPoints) {
-		if (Math.random() < CROSSOVER_RATE) {
+		if (Math.random() < crossRate) {
 			int rdmValue = (int)(Math.random() * nbCrossoverPoints);
 			int nbPoints = rdmValue >= 1 ? rdmValue : 1;
 			boolean odd = Math.random() > 0.5 ? true : false;
 
 			for (int i = 0; i < nbPoints; i++) {
-				for (int j = (int)((SOLUTION_SIZE / (float) nbPoints) * i);
-					 j < (int)((SOLUTION_SIZE / (float) nbPoints) * (i + 1)); j++) {
+				for (int j = (int)((solSize / (float) nbPoints) * i);
+					 j < (int)((solSize / (float) nbPoints) * (i + 1)); j++) {
 					if (i % 2 == 0 && odd) {
 						parent1[j] = parent2[j];
 					} else if (i % 2 != 0 && !odd) {
@@ -111,21 +114,21 @@ class GeneticAlgo {
 		int tmpIdx;
 		ArrayList<double[]> tmp = new ArrayList<double[]>();
 
-		newPopulation.clear();
-		for (int i = 0; i < POPULATION_SIZE; i++) {
+		sampTemp.clear();
+		for (int i = 0; i < popSize; i++) {
 			double[] solution = tournamentSelection();
 
-			tmpIdx = (int)(Math.random() * POPULATION_SIZE);
-			if (tmpIdx >= POPULATION_SIZE) {
-				tmpIdx = POPULATION_SIZE - 1;
+			tmpIdx = (int)(Math.random() * popSize);
+			if (tmpIdx >= popSize) {
+				tmpIdx = popSize - 1;
 			}
 			mutation(solution);
-			crossover(solution, population.get(tmpIdx), NB_CROSSOVER_POINTS);
-			newPopulation.add(solution);
+			crossover(solution, samp.get(tmpIdx), nbrCrossPoint);
+			sampTemp.add(solution);
 		}
-		tmp = population;
-		population = newPopulation;
-		newPopulation = tmp;
+		tmp = samp;
+		samp = sampTemp;
+		sampTemp = tmp;
 	}
 
 	private double[] try_one_more(double[] good) {
@@ -135,12 +138,12 @@ class GeneticAlgo {
 	
 		final_ar.add(good);
 		for(int i = 0; i < good.length;i++) {
-			double[] solTest = new double[SOLUTION_SIZE];
-			double[] solTestR = new double[SOLUTION_SIZE];
-			double[] solTestRt = new double[SOLUTION_SIZE];
-			double[] solTest2dec = new double[SOLUTION_SIZE];
-			double[] solTest5dec = new double[SOLUTION_SIZE];
-			for (int j=0; j<SOLUTION_SIZE;j++) {
+			double[] solTest = new double[solSize];
+			double[] solTestR = new double[solSize];
+			double[] solTestRt = new double[solSize];
+			double[] solTest2dec = new double[solSize];
+			double[] solTest5dec = new double[solSize];
+			for (int j=0; j<solSize;j++) {
 				solTest[j] = good[i];
 				solTestR[j] = Math.round(good[i]*10000.0)/10000.0;
 				solTestRt[j] = Math.round(good[i]*1000.0)/1000.0;
@@ -164,10 +167,10 @@ class GeneticAlgo {
 
 	public double[] getSol() {
 		updateFitnessValuesCurrentPopulation();
-		while (isAcceptable == false) {
+		while (stopCondition == StopCond.CONTINUE) {
 			getNewPopulation();
 			updateFitnessValuesCurrentPopulation();
 		}
-		return try_one_more(population.get(indexOfAcceptableSolution));
+		return try_one_more(samp.get(indexOfAcceptableSolution));
 	}
 }
