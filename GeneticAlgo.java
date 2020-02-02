@@ -17,58 +17,50 @@ class GeneticAlgo {
 	private final int NB_PARTICIPANT_TOURNAMENT = 50;
 	private final int NB_CROSSOVER_POINTS = 10;
 
-	private double[][] population;
+	private ArrayList<double[]> population;
 	private double[] fitnessValues;
-	private double[][] newPopulation;
+	private ArrayList<double[]> newPopulation;
 	private boolean isAcceptable;
 	private int indexOfAcceptableSolution;
 
 	GeneticAlgo() {
 		population = getInitialPopulation();
 		fitnessValues = new double[POPULATION_SIZE];
-		newPopulation = new double[POPULATION_SIZE][SOLUTION_SIZE];
+		newPopulation = new ArrayList<double[]>();
 		isAcceptable = false;
 	}
 
-	/**
-	 * Constructs a random population with the size defined by the class.
-	 * @return The new random population
-	 */
-	private double[][] getInitialPopulation() {
-		double[][] population = new double[POPULATION_SIZE][SOLUTION_SIZE];
+	private ArrayList<double[]> getInitialPopulation() {
+		ArrayList<double[]> population = new ArrayList<double[]>();
 
 		for (int i = 0; i < POPULATION_SIZE; i++) {
+			double[] temp = new double[SOLUTION_SIZE];
 			for (int j = 0; j < SOLUTION_SIZE; j++) {
-				population[i][j] = Math.random() * Math.round(5.12 * (Math.random() - Math.random()));
+				temp[j] = Math.random() * Math.round(5.12 * (Math.random() - Math.random()));
 			}
+			population.add(temp);
 		}
 		return population;
 	}
 
-	/**
-	 * Updates the fitness value of the different solutions.
-	 */
 	private void updateFitnessValuesCurrentPopulation() {
 		double min = -1;
 		int index = -1;
 
 		for (int i = 0; i < POPULATION_SIZE; i++) {
-			fitnessValues[i] = Assess.getTest1(population[i]);
+			fitnessValues[i] = Assess.getTest1(population.get(i));
 			if (i == 0 || fitnessValues[i] < min) {
 				min = fitnessValues[i];
 				index = i;
 			}
 		}
+		//System.out.println(min);
 		if (min == 0 || min < 1) {
 			isAcceptable = true;
 			indexOfAcceptableSolution = index;
 		}
 	}
 
-	/**
-	 * Tournament selection on the current population with the defined parameter by the class.
-	 * @return The selected solution
-	 */
 	private double[] tournamentSelection() {
 		double min = -1;
 		int index = -1;
@@ -85,13 +77,9 @@ class GeneticAlgo {
 			}
 		}
 		//System.out.println(min);
-		return population[index].clone();
+		return population.get(index).clone();
 	}
 
-	/**
-	 * Computes mutation on the new population in order to change the results.
-	 * The mutation is made on the solution and stored in it, make sure it is a copy of your original solution
-	 */
 	private void mutation(double[] solution) {
 		for (int i = 0; i < solution.length; i++) {
 			if (Math.random() < MUTATION_RATE) {
@@ -100,10 +88,6 @@ class GeneticAlgo {
 		}
 	}
 
-	/**
-	 * Crossover throughs the current population with the defined rate
-	 * The crossover is made on the parent1 and stored in it, make sure it is a copy of your original solution
-	 */
 	private void crossover(double[] parent1, double[] parent2, int nbCrossoverPoints) {
 		if (Math.random() < CROSSOVER_RATE) {
 			int rdmValue = (int)(Math.random() * nbCrossoverPoints);
@@ -123,16 +107,11 @@ class GeneticAlgo {
 		}
 	}
 
-	/**
-	 * Update the new population by computing
-	 * "Selection (tournament)"
-	 * "mutation"
-	 * "crossover"
-	 */
 	private void getNewPopulation() {
 		int tmpIdx;
-		double[][] tmp;
+		ArrayList<double[]> tmp = new ArrayList<double[]>();
 
+		newPopulation.clear();
 		for (int i = 0; i < POPULATION_SIZE; i++) {
 			double[] solution = tournamentSelection();
 
@@ -141,8 +120,8 @@ class GeneticAlgo {
 				tmpIdx = POPULATION_SIZE - 1;
 			}
 			mutation(solution);
-			crossover(solution, population[tmpIdx], NB_CROSSOVER_POINTS);
-			newPopulation[i] = solution;
+			crossover(solution, population.get(tmpIdx), NB_CROSSOVER_POINTS);
+			newPopulation.add(solution);
 		}
 		tmp = population;
 		population = newPopulation;
@@ -183,16 +162,12 @@ class GeneticAlgo {
 		return final_ar.get(to_ret);
 	}
 
-	/**
-	 * Find the solution of the given problem 1 through genetic algorithm.
-	 * @return The acceptable solution
-	 */
 	public double[] getSol() {
 		updateFitnessValuesCurrentPopulation();
 		while (isAcceptable == false) {
 			getNewPopulation();
 			updateFitnessValuesCurrentPopulation();
 		}
-		return try_one_more(population[indexOfAcceptableSolution]);
+		return try_one_more(population.get(indexOfAcceptableSolution));
 	}
 }
