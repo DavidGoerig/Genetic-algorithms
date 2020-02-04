@@ -21,7 +21,12 @@ class GeneticAlgoBool {
 	private double[][] valFitArray;
 
 
-	private boolean stopCondition;
+
+	enum StopCond {
+		CONTINUE,
+		STOP
+	}
+	private StopCond stopCondition;
 	private int solIndexx;
 	private long startT;
 
@@ -33,43 +38,40 @@ class GeneticAlgoBool {
 		this.nbCrossPoint = nbrCrossPoint;
 		this.mutRate = mutRate;
 		this.crossRate = crossRate;
-
+		stopCondition = StopCond.CONTINUE;
+		initVars(popSize, 2, solSize, false);
 		this.startT = startT;
-		samp = createSamplesArray();
-		valFitArray = new double[popSize][2];
-		sampTemp = new boolean[popSize][solSize];
-		stopCondition = false;
+		createSamplesArray();
 	}
 
-	/**
-	 * Constructs a random population with the size defined by the class.
-	 * @return The new random population
-	 */
-	private boolean[][] createSamplesArray() {
-		boolean[][] samp = new boolean[popSize][solSize];
+	private void initVars(int popSize, int arraySize, int solSize, boolean stopCondition) {
+		valFitArray = new double[popSize][arraySize];
+		sampTemp = new boolean[popSize][solSize];
+		stopCondition = stopCondition;
+		samp = new boolean[popSize][solSize];
+	}
 
+	private void createSamplesArray() {
 		for (int i = 0; i < popSize; i++) {
-			for (int j = 0; j < solSize; j++) {
-				samp[i][j] = Math.random() > 0.5 ? true : false;
-			}
+			for (int j = 0; j < solSize; j++)
+				samp[i][j] = (Math.random() > 0.5);
 		}
-		return samp;
 	}
 
 	/**
 	 * Updates the fitness value of the different solutions.
 	 * @return The minimum fitness value found.
 	 */
-	private void computeFitnessOnSample() {
-		double[] topFindedFitness = null;
+	private int computeFitnessOnSample() {
+		double maxWeight = valFitArray[i][0];
+		double maxUtil = valFitArray[i][1];
 		int solutionIndex = -1;
 
+		topFindedFitness = valFitArray[i];
+		solutionIndex = i;
 		for (int i = 0; i < popSize; i++) {
 			valFitArray[i] = Assess.getTest2(samp[i]);
-			if (topFindedFitness == null) {
-				topFindedFitness = valFitArray[i];
-				solutionIndex = i;
-			} else if (valFitArray[i][0] <= 500) {
+			if (valFitArray[i][0] <= 500) {
 				if (topFindedFitness[0] > 500) {
 					topFindedFitness = valFitArray[i];
 					solutionIndex = i;
@@ -84,7 +86,7 @@ class GeneticAlgoBool {
 				}
 			}
 		}
-		solIndexx = solutionIndex;
+		return solutionIndex;
 	}
 
 	/**
@@ -191,13 +193,13 @@ class GeneticAlgoBool {
 	public boolean[] getSol() {
 		long tmpT;
 
-		computeFitnessOnSample();
-		while (stopCondition == false) {
+		solIndexx = computeFitnessOnSample();
+		while (stopCondition == StopCond.CONTINUE) {
 			createConcurrentSample();
-			computeFitnessOnSample();
+			solIndexx = computeFitnessOnSample();
 			tmpT = System.currentTimeMillis();
 			if ((tmpT - startT) / 1000.0 > 14) {
-				stopCondition = true;
+				stopCondition = StopCond.STOP;
 			}
 		}
 		return samp[solIndexx];

@@ -69,7 +69,7 @@ class GeneticAlgo {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private void computeFitnessOnSample() {
+	private int computeFitnessOnSample() {
 		double min = Assess.getTest1(samp.get(0));
 		int solIndex = 0;
 
@@ -82,8 +82,9 @@ class GeneticAlgo {
 		}
 		if (min < 1) {
 			stopCondition = StopCond.STOP;
-			solIndexx = solIndex;
+			return solIndex;
 		}
+		return (1);
 	}
 
 	/**
@@ -283,10 +284,10 @@ class GeneticAlgo {
 	 * @id djg53
 	 */
 	public double[] getSol() {
-		computeFitnessOnSample();
+		solIndexx = computeFitnessOnSample();
 		while (stopCondition == StopCond.CONTINUE) {
 			createConcurrentSample();
-			computeFitnessOnSample();
+			solIndexx = computeFitnessOnSample();
 		}
 		return try_one_more(samp.get(solIndexx));
 	}
