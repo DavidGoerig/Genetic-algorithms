@@ -8,145 +8,158 @@ import java.lang.Math;
 import java.util.*;
 
 class GeneticAlgoBool {
-	private int solSize = 100;
-	private int popSize = 15000;
-	private int nbrSampleSelection = 50;
-	private int nbrCrossPoint = 10;
-	private double mutRate = 1;
-	private double crossRate = 90;
-	enum StopCond {
-		CONTINUE,
-		STOP
-	}
-	private ArrayList<boolean[]> samp  = new ArrayList<boolean[]>();
-	private ArrayList<boolean[]> sampTemp = new ArrayList<boolean[]>();
-	private ArrayList<double[]> valFitWeightArray;
-	private StopCond stopCondition;
-	private int solIndexx;
+
+	// The maximum amount of time for the program to run
+	private final int AVAILABLE_TIME = 9;
+	// The number of candidate into a solution.
+	private final int SOLUTION_SIZE = 100;
+	// The number of candidate into a population. (MUST CONTAINS AT LEAST 2 SOLUTIONS)
+	private final int POPULATION_SIZE = 15000;
+	// The mutation rate.
+	private final double MUTATION_RATE = 0.02;
+	// The crossover rate.1
+	private final double CROSSOVER_RATE = 0.95;
+	// The number of particpant to the tournament selection.
+	private final int NB_PARTICIPANT_TOURNAMENT = 100;
+	// The number of crossover points into the crossover.
+	private final int NB_CROSSOVER_POINTS = 100;
+
+	// The counter on how many times did the fitness stand under a threshold.
+	// Defined to stop the GA and fine local minima.
+	private int counterFitnessStall;
+	// The array that contains all the current population.
+	private boolean[][] population;
+	// The array that contains the fitness values for each double[] into "population" array.
+	private double[][] fitnessValues;
+	// The temporary array that contains the new population from the current population.
+	private boolean[][] newPopulation;
+	// It contains the previous closest fitness value to 0.
+	private boolean isAcceptable;
+	// It contains the index of this value in the population array.
+	private int indexOfAcceptableSolution;
 	private long startT;
 
-	private boolean[] solution;
-	private double globalMax = 0;
-
-	/**
-	 * @desc Genetic algorithm for the problem 1 in the assessment
-	 * @param /
-	 * @author David Goerig
-	 * @id djg53
-	 */
+	// Intialize the different variables
 	GeneticAlgoBool(long startT) {
 		this.startT = startT;
-		stopCondition = StopCond.CONTINUE;
-		createSamplesArraysB();
-		valFitWeightArray = new ArrayList<double[]>();
+		population = getInitialPopulation();
+		fitnessValues = new double[POPULATION_SIZE][2];
+		newPopulation = new boolean[POPULATION_SIZE][SOLUTION_SIZE];
+		isAcceptable = false;
+		counterFitnessStall = 0;
 	}
 
 	/**
-	 * @desc create the samples for creating the population (in arraylist)
-	 * @param /
-	 * @author David Goerig
-	 * @id djg53
+	 * Constructs a random population with the size defined by the class.
+	 * @return The new random population
 	 */
-	private void createSamplesArraysB() {
-		for (int i = 0; i < popSize; i++) {
-			boolean[] temp = new boolean[solSize];
-			for (int j = 0; j < solSize; j++) {
-				temp[j] = (Math.random()>0.5);
+	private boolean[][] getInitialPopulation() {
+		boolean[][] population = new boolean[POPULATION_SIZE][SOLUTION_SIZE];
+
+		for (int i = 0; i < POPULATION_SIZE; i++) {
+			for (int j = 0; j < SOLUTION_SIZE; j++) {
+				population[i][j] = Math.random() > 0.5 ? true : false;
 			}
-			this.samp.add(temp);
+		}
+		return population;
+	}
+
+	/**
+	 * Updates the fitness value of the different solutions.
+	 * @return The minimum fitness value found.
+	 */
+	private void updateFitnessValuesCurrentPopulation() {
+		double[] bestFitness = null;
+		int index = -1;
+
+		for (int i = 0; i < POPULATION_SIZE; i++) {
+			fitnessValues[i] = Assess.getTest2(population[i]);
+			if (bestFitness == null) {
+				bestFitness = fitnessValues[i];
+				index = i;
+			} else if (fitnessValues[i][0] <= 500) {
+				if (bestFitness[0] > 500) {
+					bestFitness = fitnessValues[i];
+					index = i;
+				} else if (fitnessValues[i][1] > bestFitness[1]) {
+					bestFitness = fitnessValues[i];
+					index = i;
+				}
+			} else {
+				if (fitnessValues[i][0] < bestFitness[0]) {
+					bestFitness = fitnessValues[i];
+					index = i;
+				}
+			}
+		}
+		indexOfAcceptableSolution = index;
+	}
+
+	/**
+	 * Tournament selection on the current population with the defined parameter by the class.
+	 * @return The selected solution
+	 */
+	private boolean[] tournamentSelection() {
+		double[] bestFitness = null;
+		int index = -1;
+		int tmpIdx;
+
+		for (int i = 0; i < NB_PARTICIPANT_TOURNAMENT; i++) {
+			tmpIdx = (int)(Math.random() * POPULATION_SIZE);
+			if (tmpIdx >= POPULATION_SIZE) {
+				tmpIdx = POPULATION_SIZE - 1;
+			}
+			if (bestFitness == null) {
+				bestFitness = fitnessValues[tmpIdx];
+				index = tmpIdx;
+			} else if (fitnessValues[tmpIdx][0] <= 500) {
+				if (bestFitness[0] > 500) {
+					bestFitness = fitnessValues[tmpIdx];
+					index = tmpIdx;
+				} else if (fitnessValues[tmpIdx][1] > bestFitness[1]) {
+					bestFitness = fitnessValues[tmpIdx];
+					index = tmpIdx;
+				}
+			} else {
+				if (fitnessValues[tmpIdx][0] < bestFitness[0]) {
+					bestFitness = fitnessValues[tmpIdx];
+					index = tmpIdx;
+				}
+			}
+		}
+		System.out.println(bestFitness[0]);
+		return population[index].clone();
+	}
+
+	/**
+	 * Computes mutation on the new population in order to change the results.
+	 * The mutation is made on the solution and stored in it, make sure it is a copy of your original solution
+	 */
+	private void mutation(boolean[] solution) {
+		for (int i = 0; i < solution.length; i++) {
+			if (Math.random() < MUTATION_RATE) {
+				solution[i] = !solution[i];
+			}
 		}
 	}
 
 	/**
-	 * @desc calc all the fitness in the population
-	 * @param /
-	 * @author David Goerig
-	 * @id djg53
+	 * Crossover throughs the current population with the defined rate
+	 * The crossover is made on the parent1 and stored in it, make sure it is a copy of your original solution
 	 */
-	private void computeFitnessOnSampleB() {
-		double[] fit = Assess.getTest2(samp.get(0));
-		int solIndex = 0;
-		double max = fit[1];
-		double weight = fit[0];
+	private void crossover(boolean[] parent1, boolean[] parent2, int nbCrossoverPoints) {
+		if (Math.random() < CROSSOVER_RATE) {
+			int rdmValue = (int)(Math.random() * nbCrossoverPoints);
+			int nbPoints = rdmValue >= 1 ? rdmValue : 1;
+			boolean odd = Math.random() > 0.5 ? true : false;
 
-		for (int i = 0; i < popSize; i++) {
-			fit = Assess.getTest2(samp.get(i));
-			valFitWeightArray.add(fit);
-			if (fit[1] > max && fit[0] <= 500) {
-				max = fit[1];
-				weight = fit[0];
-				solIndex = i;
-			}
-		}
-		long endT=System.currentTimeMillis();
-		if ((weight == 500) || (((endT - startT)/1000.0) >= 15 )) {
-			stopCondition = StopCond.STOP;
-			solIndexx = solIndex;
-		}
-	}
-
-	/**
-	 * @desc selection function, select the best samples using tournament algo
-	 * @param
-	 * @author David Goerig
-	 * @id djg53
-	 */
-	private boolean[] selectionB() {
-		double[] fit = Assess.getTest2(samp.get(0));
-		double max = fit[1];
-		double weight = fit[0];
-
-		int selected_samp = 0;
-		int tmp;
-
-		for (int i = 0; i < nbrSampleSelection; i++) {
-			tmp = (int)(Math.random() * popSize) % popSize;
-			while (tmp >= popSize) {
-				tmp = (int)(Math.random() * popSize) % popSize;
-			}
-			fit = valFitWeightArray.get(tmp);
-			if (max < fit[1]  && fit[0] <= weight) {
-				max = fit[1];
-				weight = fit[0];
-				selected_samp = tmp;
-			}
-		}
-
-		if (weight <= 500)
-			System.out.println("----------------------------------------");	
-		System.out.println("Utility: " + max + "Weight" + weight);
-		//System.out.println(min););
-		if (max >= globalMax && weight <= 500) {
-			globalMax = max;
-			solution = samp.get(selected_samp);
-		}
-		return samp.get(selected_samp).clone();
-	}
-
-	/**
-	 * @desc crossover on two candidates
-	 * @param candidate1 candidate2 nbrCrossoverPoints
-	 * @author David Goerig
-	 * @id djg53
-	 */
-	private void crossOnCandidatB(boolean[] candidate1, boolean[] candidate2, int nbCrossoverPoints) {
-		int rdm = 1;
-		int pointNbr = 1;
-		boolean isPair = true;
-		double random = Math.random() * 100;
-		if (random >= 50)
-			isPair = false;
-		if (Math.random() * 100 < crossRate) {
-			rdm = (int)((Math.random() * nbCrossoverPoints) % nbCrossoverPoints);
-			if (rdm != 0)
-				pointNbr = rdm;
-			for (int i = 0; i < pointNbr; i++) {
-				for (int j = (int)((solSize / (float) pointNbr) * i);
-					 j < (int)((solSize / (float) pointNbr) * (i + 1)); j++) {
-					if (i % 2 == 0 && isPair) {
-						candidate1[j] = candidate2[j];
-					} else if (i % 2 != 0 && !isPair) {
-						candidate1[j] = candidate2[j];
+			for (int i = 0; i < nbPoints; i++) {
+				for (int j = (int)((SOLUTION_SIZE / (float) nbPoints) * i);
+					 j < (int)((SOLUTION_SIZE / (float) nbPoints) * (i + 1)); j++) {
+					if (i % 2 == 0 && odd) {
+						parent1[j] = parent2[j];
+					} else if (i % 2 != 0 && !odd) {
+						parent1[j] = parent2[j];
 					}
 				}
 			}
@@ -154,70 +167,47 @@ class GeneticAlgoBool {
 	}
 
 	/**
-	 * @desc apply mutation on some candidates
-	 * @param candidate (double)
-	 * @author David Goerig
-	 * @id djg53
+	 * Update the new population by computing
+	 * "Selection (tournament)"
+	 * "mutation"
+	 * "crossover"
 	 */
-	private void mutOnCandidatB(boolean[] sol) {
-		for (int i = 0; i < sol.length; i++) {
-			if (Math.random() * 100 < mutRate) {
-				if (sol[i] == true)
-					sol[i] = false;
-				else
-					sol[i] = true;
+	private void getNewPopulation() {
+		int tmpIdx;
+		boolean[][] tmp;
+
+		for (int i = 0; i < POPULATION_SIZE; i++) {
+			boolean[] solution = tournamentSelection();
+
+			tmpIdx = (int)(Math.random() * POPULATION_SIZE);
+			if (tmpIdx >= POPULATION_SIZE) {
+				tmpIdx = POPULATION_SIZE - 1;
 			}
+			mutation(solution);
+			crossover(solution, population[tmpIdx], NB_CROSSOVER_POINTS);
+			newPopulation[i] = solution;
 		}
+		tmp = population;
+		population = newPopulation;
+		newPopulation = tmp;
 	}
 
 	/**
-	 * @desc
-	 * @param
-	 * @author David Goerig
-	 * @id djg53
-	 */
-	private void createConcurrentSampleB() {
-		int index;
-		ArrayList<boolean[]> temporary = new ArrayList<boolean[]>();
-
-		sampTemp.clear();
-		for (int i = 0; i < popSize; i++) {
-			boolean[] sol = selectionB();
-
-			index = (int)(Math.random() * popSize) % popSize;
-			while (index >= popSize) {
-				index = (int)(Math.random() * popSize) % popSize;
-			}
-			mutOnCandidatB(sol);
-			crossOnCandidatB(sol, samp.get(index), nbrCrossPoint);
-			sampTemp.add(sol);
-		}
-		temporary = samp;
-		samp = sampTemp;
-		sampTemp = temporary;
-	}
-
-	/**
-	 * @desc
-	 * @return
-	 * @author David Goerig
-	 * @id djg53
+	 * Find the solution of the given problem 1 through genetic algorithm.
+	 * @return The acceptable solution
 	 */
 	public boolean[] getSol() {
-		computeFitnessOnSampleB();
-		while (stopCondition == StopCond.CONTINUE) {
-			createConcurrentSampleB();
-			computeFitnessOnSampleB();
+		long tmpT;
+
+		updateFitnessValuesCurrentPopulation();
+		while (isAcceptable == false) {
+			getNewPopulation();
+			updateFitnessValuesCurrentPopulation();
+			tmpT = System.currentTimeMillis();
+			if ((tmpT - startT) / 1000.0 > AVAILABLE_TIME) {
+				isAcceptable = true;
+			}
 		}
-		System.out.println("HMMM:" + Assess.getTest2(samp.get(solIndexx))[1] + " Weight: " + Assess.getTest2(samp.get(solIndexx))[0]);
-		/*System.out.println("HMMM:" + Assess.getTest2(solution)[1]);
-		if ((Assess.getTest2(samp.get(solIndexx)))[1] < (Assess.getTest2(solution)[1]))
-			return solution;*/
-		return samp.get(solIndexx);
-		/*boolean[] ret = new boolean[100];
-		for (int j = 0; j < 100; j++) {
-			ret[j] = (Math.random()>0.5);
-		}
-		return ret;*/
+		return population[indexOfAcceptableSolution];
 	}
 }
