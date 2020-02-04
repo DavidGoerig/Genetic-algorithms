@@ -47,19 +47,21 @@ class GeneticAlgo {
 		createSamplesArrays();
 	}
 
-	/**
-	 * @desc create the samples for creating the population (in arraylist)
-	 * @param /
-	 * @author David Goerig
-	 * @id djg53
-	 */
-	private void createSamplesArrays() {
-		for (int i = 0; i < popSize; i++) {
-			double[] temp = new double[solSize];
-			for (int j = 0; j < solSize; j++) {
-				temp[j] = Math.random() * Math.round(5.12 * (Math.random() - Math.random()));
+	private void converge_fct(double min, int selected_samp) {
+		if (convergeCounter == 0) {
+			converge = min;
+			convergeOld = 0;
+		}
+		convergeCounter += 1;
+		if (convergeCounter % 100000 == 0) {
+			convergeOld = converge;
+			converge = min;
+			//System.out.println("--------------------------------------------------------------" + converge + " " + convergeOld);
+			//if (converge >= convergeOld * 0.9999999999999 && converge <= convergeOld * 1.0099999999999) {
+			if (converge - convergeOld < 0.001  && converge - convergeOld > -0.001) {
+				solIndexx = selected_samp;
+				stopCondition = StopCond.STOP;
 			}
-			this.samp.add(temp);
 		}
 	}
 
@@ -125,21 +127,19 @@ class GeneticAlgo {
 		return samp.get(selected_samp).clone();
 	}
 
-	private void converge_fct(double min, int selected_samp) {
-		if (convergeCounter == 0) {
-			converge = min;
-			convergeOld = 0;
-		}
-		convergeCounter += 1;
-		if (convergeCounter % 100000 == 0) {
-			convergeOld = converge;
-			converge = min;
-			//System.out.println("--------------------------------------------------------------" + converge + " " + convergeOld);
-			//if (converge >= convergeOld * 0.9999999999999 && converge <= convergeOld * 1.0099999999999) {
-			if (converge - convergeOld < 0.001  && converge - convergeOld > -0.001) {
-				solIndexx = selected_samp;
-				stopCondition = StopCond.STOP;
+	/**
+	 * @desc create the samples for creating the population (in arraylist)
+	 * @param /
+	 * @author David Goerig
+	 * @id djg53
+	 */
+	private void createSamplesArrays() {
+		for (int i = 0; i < popSize; i++) {
+			double[] temp = new double[solSize];
+			for (int j = 0; j < solSize; j++) {
+				temp[j] = Math.random() * Math.round(5.12 * (Math.random() - Math.random()));
 			}
+			this.samp.add(temp);
 		}
 	}
 

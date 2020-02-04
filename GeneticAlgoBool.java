@@ -97,6 +97,31 @@ class GeneticAlgoBool {
 		return solutionIndex;
 	}
 
+	private void crossOnCandidat(boolean[] candidate1, boolean[] candidate2, int cross_pt_nbr) {
+		int rdm = 1;
+		int pointNbr = 1;
+		boolean isPair = true;
+		double random = Math.random() * 100;
+		if (random >= 50)
+			isPair = false;
+		if (Math.random() * 100 < crossRate) {
+			rdm = (int)((Math.random() * nbCrossPoint) % nbCrossPoint);
+			if (rdm != 0)
+				pointNbr = rdm;
+			for (int i = 0; i < pointNbr; i++) {
+				int intervalSize = (int)((solSize / (float) pointNbr) * i);
+				int intervalCounter = (int)((solSize / (float) pointNbr) * (i + 1));
+				for (int j = intervalSize; j < intervalCounter; j++) {
+					if (i % 2 == 0 && isPair == true) {
+						candidate1[j] = candidate2[j];
+					} else if (i % 2 != 0 && isPair == false) {
+						candidate1[j] = candidate2[j];
+					}
+				}
+			}
+		}
+	}
+
 	/**
 	 * Tournament selection on the current population with the defined parameter by the class.
 	 * @return The selected solution
@@ -150,40 +175,14 @@ class GeneticAlgoBool {
 	private void mutOnCandidat(boolean[] indiviu) {
 		for (int i = 0; i < indiviu.length; i++) {
 			if (Math.random() * 100 % 100 < mutRate) {
-				indiviu[i] = !indiviu[i];
+				if (indiviu[i] == true)
+					indiviu[i] = false;
+				else
+					indiviu[i] = true;
 			}
 		}
 	}
 
-	/**
-	 * Crossover throughs the current population with the defined rate
-	 * The crossover is made on the parent1 and stored in it, make sure it is a copy of your original solution
-	 */
-	private void crossOnCandidat(boolean[] to_cross_1, boolean[] to_cross_2, int cross_pt_nbr) {
-		if (Math.random() * 100 % 100 < crossRate) {
-			int random = (int)(Math.random() * cross_pt_nbr);
-			int nbPoints = random >= 1 ? random : 1;
-			boolean odd = Math.random() > 0.5 ? true : false;
-
-			for (int i = 0; i < nbPoints; i++) {
-				for (int j = (int)((solSize / (float) nbPoints) * i);
-					 j < (int)((solSize / (float) nbPoints) * (i + 1)); j++) {
-					if (i % 2 == 0 && odd) {
-						to_cross_1[j] = to_cross_2[j];
-					} else if (i % 2 != 0 && !odd) {
-						to_cross_1[j] = to_cross_2[j];
-					}
-				}
-			}
-		}
-	}
-
-	/**
-	 * Update the new population by computing
-	 * "Selection (tournament)"
-	 * "mutation"
-	 * "crossover"
-	 */
 	private void createConcurrentSample() {
 		int tmpIdx;
 		boolean[][] tmp;
