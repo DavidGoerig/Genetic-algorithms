@@ -22,10 +22,10 @@ class GeneticAlgo {
 	}
 	private ArrayList<double[]> samp  = new ArrayList<double[]>();
 	private ArrayList<double[]> sampTemp = new ArrayList<double[]>();
-	private double[] valFitArray;
-	private StopCond stopCondition;
+	private double[] valFitArray = new double[popSize];
+	private StopCond stopCondition  = StopCond.CONTINUE;
 	private int solIndexx;
-	private int convergeCounter;
+	private int convergeCounter = 0;
 	private double converge;
 	private double convergeOld;
 
@@ -36,10 +36,7 @@ class GeneticAlgo {
 	 * @id djg53
 	 */
 	GeneticAlgo() {
-		convergeCounter = 0;
-		stopCondition = StopCond.CONTINUE;
 		createSamplesArrays();
-		valFitArray = new double[popSize];
 	}
 
 	/**
@@ -82,6 +79,20 @@ class GeneticAlgo {
 	}
 
 	/**
+	 * @desc random in a max
+	 * @param borne
+	 * @author David Goerig
+	 * @id djg53
+	 */
+
+	private int random_in_range(int range) {
+		int rdm = (int)(Math.random() * range) % range;
+		while (rdm >= range) {
+			rdm = (int)(Math.random() * range) % range;
+		}
+		return rdm;
+	}
+	/**
 	 * @desc selection function, select the best samples using tournament algo
 	 * @param
 	 * @author David Goerig
@@ -93,16 +104,12 @@ class GeneticAlgo {
 		int tmp;
 
 		for (int i = 0; i < nbrSampleSelection; i++) {
-			tmp = (int)(Math.random() * popSize) % popSize;
-			while (tmp >= popSize) {
-				tmp = (int)(Math.random() * popSize) % popSize;
-			}
+			tmp = random_in_range(popSize);
 			if (min > valFitArray[tmp]) {
 				min = valFitArray[tmp];
 				selected_samp = tmp;
 			}
 		}
-		//System.out.println(min);
 		converge_fct(min, selected_samp);
 		return samp.get(selected_samp).clone();
 	}
@@ -157,11 +164,12 @@ class GeneticAlgo {
 			if (rdm != 0)
 				pointNbr = rdm;
 			for (int i = 0; i < pointNbr; i++) {
-				for (int j = (int)((solSize / (float) pointNbr) * i);
-					 j < (int)((solSize / (float) pointNbr) * (i + 1)); j++) {
-					if (i % 2 == 0 && isPair) {
+				int intervalSize = (int)((solSize / (float) pointNbr) * i);
+				int intervalCounter = (int)((solSize / (float) pointNbr) * (i + 1));
+				for (int j = intervalSize; j < intervalCounter; j++) {
+					if (i % 2 == 0 && isPair == true) {
 						candidate1[j] = candidate2[j];
-					} else if (i % 2 != 0 && !isPair) {
+					} else if (i % 2 != 0 && isPair == false) {
 						candidate1[j] = candidate2[j];
 					}
 				}
@@ -178,18 +186,21 @@ class GeneticAlgo {
 	private void createConcurrentSample() {
 		int index;
 		double[] solution;
+		int[] indexRdm = new int[popSize];
 		ArrayList<double[]> temporary = new ArrayList<double[]>();
 
 		sampTemp.clear();
 		for (int i = 0; i < popSize; i++) {
-			 solution = selection();
-
 			index = (int)(Math.random() * popSize) % popSize;
 			while (index >= popSize) {
 				index = (int)(Math.random() * popSize) % popSize;
 			}
+			indexRdm[i] = index;
+		}
+		for (int j = 0; j < popSize; j++) {
+			solution = selection();
 			mutOnCandidat(solution);
-			crossOnCandidat(solution, samp.get(index), nbrCrossPoint);
+			crossOnCandidat(solution, samp.get(indexRdm[j]), nbrCrossPoint);
 			sampTemp.add(solution);
 		}
 		temporary = samp;
@@ -198,7 +209,7 @@ class GeneticAlgo {
 	}
 
 	/**
-	 * @desc
+	 * @desc sorry for that function
 	 * @param
 	 * @author David Goerig
 	 * @id djg53
@@ -210,10 +221,19 @@ class GeneticAlgo {
 	
 		final_ar.add(good);
 		double[] roundOne = new double[solSize];
+		double[] roundOneb = new double[solSize];
+		double[] roundOnec = new double[solSize];
+		double[] roundOned = new double[solSize];
 		for(int r=0; r < good.length;r++) {
 			roundOne[r] = Math.round(good[r]*1000.0)/1000.0;
+			roundOneb[r] = Math.round(good[r]*100.0)/100.0;
+			roundOned[r] = Math.round(good[r]*10.0)/10.0;
+			roundOnec[r] = Math.round(good[r]*10000.0)/10000.0;
 		}
 		final_ar.add(roundOne);
+		final_ar.add(roundOneb);
+		final_ar.add(roundOnec);
+		final_ar.add(roundOned);
 		for(int i = 0; i < good.length;i++) {
 			double[] solTest = new double[solSize];
 			double[] solTestR = new double[solSize];
@@ -256,7 +276,6 @@ class GeneticAlgo {
 	 */
 	public double[] getSol() {
 		computeFitnessOnSample();
-		// TODO delete this
 		while (stopCondition == StopCond.CONTINUE) {
 			createConcurrentSample();
 			computeFitnessOnSample();

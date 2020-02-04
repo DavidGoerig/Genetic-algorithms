@@ -127,7 +127,7 @@ class GeneticAlgoBool {
 				}
 			}
 		}
-		System.out.println(bestFitness[0]);
+		//System.out.println(bestFitness[0]);
 		return population[index].clone();
 	}
 
