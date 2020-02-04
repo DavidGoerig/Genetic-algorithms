@@ -16,9 +16,9 @@ class Example {
 		String name="David Goerig";
 		String login = "djg53";
 
-		GeneticAlgo ga = new GeneticAlgo();
+		GeneticAlgo ga = new GeneticAlgo(20, 15000, 50, 10, 1, 90);
 		double[] sol1 = ga.getSol();
-		GeneticAlgoBool gab = new GeneticAlgoBool(startT);
+		GeneticAlgoBool gab = new GeneticAlgoBool(startT, 100, 15000, 50, 100, 2, 90);
 		boolean[] sol2 = gab.getSol();
 
 		//System.out.println("These are the instructions of how to use the problem library.  Please make sure you follow the instructions carefully.");

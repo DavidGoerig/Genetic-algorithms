@@ -8,21 +8,22 @@ import java.lang.Math;
 import java.util.*;
 
 class GeneticAlgo {
+	private int solSize;
+	private int popSize;
+	private int nbrSampleSelection;
+	private int nbrCrossPoint;
+	private double mutRate;
+	private double crossRate;
 
-	private int solSize = 20;
-	private int popSize = 15000;
-	private int nbrSampleSelection = 50;
-	private int nbrCrossPoint = 10;
-	private double mutRate = 1;
+
 	private double mutVal = 0.1;
-	private double crossRate = 90;
 	enum StopCond {
 		CONTINUE,
 		STOP
 	}
 	private ArrayList<double[]> samp  = new ArrayList<double[]>();
 	private ArrayList<double[]> sampTemp = new ArrayList<double[]>();
-	private double[] valFitArray = new double[popSize];
+	private double[] valFitArray;
 	private StopCond stopCondition  = StopCond.CONTINUE;
 	private int solIndexx;
 	private int convergeCounter = 0;
@@ -35,7 +36,14 @@ class GeneticAlgo {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	GeneticAlgo() {
+	GeneticAlgo(int solSize, int popSize, int nbrSampleSelection, int nbrCrossPoint, double mutRate, double crossRate) {
+		this.solSize = solSize;
+		this.popSize = popSize;
+		this.nbrSampleSelection = nbrSampleSelection;
+		this.nbrCrossPoint = nbrCrossPoint;
+		this.mutRate = mutRate;
+		this.crossRate = crossRate;
+		valFitArray= new double[popSize];
 		createSamplesArrays();
 	}
 
