@@ -30,7 +30,12 @@ class GeneticAlgoBool {
 	private int solIndexx;
 	private long startT;
 
-	// Intialize the different variables
+	/**
+	 * @desc Genetic algorithm for the problem 2 in the assessment
+	 * @param /
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	GeneticAlgoBool(long startT, int solSize, int popSize, int nbrSampleSelection, int nbrCrossPoint, double mutRate, double crossRate) {
 		this.solSize = solSize;
 		this.popSize = popSize;
@@ -44,6 +49,12 @@ class GeneticAlgoBool {
 		createSamplesArray();
 	}
 
+	/**
+	 * @desc init variables
+	 * @param popSize arraySize solSize stopCondition
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	private void initVars(int popSize, int arraySize, int solSize, boolean stopCondition) {
 		valFitArray = new double[popSize][arraySize];
 		sampTemp = new boolean[popSize][solSize];
@@ -51,6 +62,13 @@ class GeneticAlgoBool {
 		samp = new boolean[popSize][solSize];
 	}
 
+	/**
+	 * @desc create the all the population
+	 * @param /
+	 * @return /
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	private void createSamplesArray() {
 		for (int i = 0; i < popSize; i++) {
 			for (int j = 0; j < solSize; j++)
@@ -59,8 +77,11 @@ class GeneticAlgoBool {
 	}
 
 	/**
-	 * Updates the fitness value of the different solutions.
-	 * @return The minimum fitness value found.
+	 * @desc calc all the fitness in the population
+	 * @param /
+	 * @return best indiv in the pop index
+	 * @author David Goerig
+	 * @id djg53
 	 */
 	private int computeFitnessOnSample() {
 		double[] fit = Assess.getTest2(samp[0]);
@@ -97,6 +118,13 @@ class GeneticAlgoBool {
 		return solutionIndex;
 	}
 
+	/**
+	 * @desc crossover between two candidates
+	 * @param candidate1, candidate 2, cross_pt_nbr
+	 * @return
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	private void crossOnCandidat(boolean[] candidate1, boolean[] candidate2, int cross_pt_nbr) {
 		int rdm = 1;
 		int pointNbr = 1;
@@ -123,8 +151,11 @@ class GeneticAlgoBool {
 	}
 
 	/**
-	 * Tournament selection on the current population with the defined parameter by the class.
-	 * @return The selected solution
+	 * @desc select the best indiv in a defined range (nbrSample selection)
+	 * @param /
+	 * @return selected indiv
+	 * @author David Goerig
+	 * @id djg53
 	 */
 	private boolean[] selection() {
 		double weight;
@@ -169,8 +200,11 @@ class GeneticAlgoBool {
 	}
 
 	/**
-	 * Computes mutation on the new population in order to change the results.
-	 * The mutation is made on the solution and stored in it, make sure it is a copy of your original solution
+	 * @desc mutation on a candidate depending on the range
+	 * @param the future xmen
+	 * @return /
+	 * @author David Goerig
+	 * @id djg53
 	 */
 	private void mutOnCandidat(boolean[] indiviu) {
 		for (int i = 0; i < indiviu.length; i++) {
@@ -183,29 +217,41 @@ class GeneticAlgoBool {
 		}
 	}
 
+	/**
+	 * @desc create next sample with mut, cross and selection
+	 * @param /
+	 * @return
+	 * @author David Goerig
+	 * @id djg53
+	 */
 	private void createConcurrentSample() {
-		int tmpIdx;
-		boolean[][] tmp;
-
+		int index;
+		boolean[][] stock;
+		int[] indexRdm = new int[popSize];
+		for (int i = 0; i < popSize; i++) {
+			index = (int)(Math.random() * popSize);
+			if (index >= popSize) {
+				index = popSize - 1;
+			}
+		}
 		for (int i = 0; i < popSize; i++) {
 			boolean[] solution = selection();
-
-			tmpIdx = (int)(Math.random() * popSize);
-			if (tmpIdx >= popSize) {
-				tmpIdx = popSize - 1;
-			}
+			index = indexRdm[i];
 			mutOnCandidat(solution);
-			crossOnCandidat(solution, samp[tmpIdx], nbCrossPoint);
+			crossOnCandidat(solution, samp[index], nbCrossPoint);
 			sampTemp[i] = solution;
 		}
-		tmp = samp;
+		stock = samp;
 		samp = sampTemp;
-		sampTemp = tmp;
+		sampTemp = stock;
 	}
 
 	/**
-	 * Find the solution of the given problem 1 through genetic algorithm.
-	 * @return The acceptable solution
+	 * @desc
+	 * @param /
+	 * @return
+	 * @author David Goerig
+	 * @id djg53
 	 */
 	public boolean[] getSol() {
 		long tmpT;
