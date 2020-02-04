@@ -9,11 +9,11 @@ import java.util.*;
 
 class GeneticAlgoBool {
 	private int solSize = 100;
-	private int popSize = 100000;
-	private int nbrSampleSelection = 100;
+	private int popSize = 15000;
+	private int nbrSampleSelection = 50;
 	private int nbrCrossPoint = 10;
-	private double mutRate = 20;
-	private double crossRate = 80;
+	private double mutRate = 1;
+	private double crossRate = 90;
 	enum StopCond {
 		CONTINUE,
 		STOP
@@ -66,20 +66,20 @@ class GeneticAlgoBool {
 	private void computeFitnessOnSampleB() {
 		double[] fit = Assess.getTest2(samp.get(0));
 		int solIndex = 0;
-		double max = fit[0];
-		double weight = fit[1];
+		double max = fit[1];
+		double weight = fit[0];
 
 		for (int i = 0; i < popSize; i++) {
 			fit = Assess.getTest2(samp.get(i));
 			valFitWeightArray.add(fit);
-			if (fit[0] > max && fit[1] <= 500) {
-				max = fit[0];
-				weight = fit[1];
+			if (fit[1] > max && fit[0] <= 500) {
+				max = fit[1];
+				weight = fit[0];
 				solIndex = i;
 			}
 		}
 		long endT=System.currentTimeMillis();
-		if (((endT - startT)/1000.0) >= 15 ) {
+		if ((weight == 500) || (((endT - startT)/1000.0) >= 15 )) {
 			stopCondition = StopCond.STOP;
 			solIndexx = solIndex;
 		}
@@ -93,8 +93,8 @@ class GeneticAlgoBool {
 	 */
 	private boolean[] selectionB() {
 		double[] fit = Assess.getTest2(samp.get(0));
-		double max = fit[0];
-		double weight = fit[1];
+		double max = fit[1];
+		double weight = fit[0];
 
 		int selected_samp = 0;
 		int tmp;
@@ -105,13 +105,18 @@ class GeneticAlgoBool {
 				tmp = (int)(Math.random() * popSize) % popSize;
 			}
 			fit = valFitWeightArray.get(tmp);
-			if (max < fit[0]  && fit[1] <= 600) {
-				max = fit[0];
-				weight = fit[1];
+			if (max < fit[1]  && fit[0] <= weight) {
+				max = fit[1];
+				weight = fit[0];
 				selected_samp = tmp;
 			}
 		}
-		if (max >= globalMax) {
+
+		if (weight <= 500)
+			System.out.println("----------------------------------------");	
+		System.out.println("Utility: " + max + "Weight" + weight);
+		//System.out.println(min););
+		if (max >= globalMax && weight <= 500) {
 			globalMax = max;
 			solution = samp.get(selected_samp);
 		}
@@ -154,10 +159,13 @@ class GeneticAlgoBool {
 	 * @author David Goerig
 	 * @id djg53
 	 */
-	private void mutOnCandidatB(boolean[] solution) {
-		for (int i = 0; i < solution.length; i++) {
+	private void mutOnCandidatB(boolean[] sol) {
+		for (int i = 0; i < sol.length; i++) {
 			if (Math.random() * 100 < mutRate) {
-				solution[i] = !solution[i];
+				if (sol[i] == true)
+					sol[i] = false;
+				else
+					sol[i] = true;
 			}
 		}
 	}
@@ -174,15 +182,15 @@ class GeneticAlgoBool {
 
 		sampTemp.clear();
 		for (int i = 0; i < popSize; i++) {
-			boolean[] solution = selectionB();
+			boolean[] sol = selectionB();
 
 			index = (int)(Math.random() * popSize) % popSize;
 			while (index >= popSize) {
 				index = (int)(Math.random() * popSize) % popSize;
 			}
-			mutOnCandidatB(solution);
-			crossOnCandidatB(solution, samp.get(index), nbrCrossPoint);
-			sampTemp.add(solution);
+			mutOnCandidatB(sol);
+			crossOnCandidatB(sol, samp.get(index), nbrCrossPoint);
+			sampTemp.add(sol);
 		}
 		temporary = samp;
 		samp = sampTemp;
@@ -201,8 +209,10 @@ class GeneticAlgoBool {
 			createConcurrentSampleB();
 			computeFitnessOnSampleB();
 		}
-		if ((Assess.getTest2(samp.get(solIndexx)))[0] < (Assess.getTest2(solution)[0]))
-			return solution;
+		System.out.println("HMMM:" + Assess.getTest2(samp.get(solIndexx))[1] + " Weight: " + Assess.getTest2(samp.get(solIndexx))[0]);
+		/*System.out.println("HMMM:" + Assess.getTest2(solution)[1]);
+		if ((Assess.getTest2(samp.get(solIndexx)))[1] < (Assess.getTest2(solution)[1]))
+			return solution;*/
 		return samp.get(solIndexx);
 		/*boolean[] ret = new boolean[100];
 		for (int j = 0; j < 100; j++) {
