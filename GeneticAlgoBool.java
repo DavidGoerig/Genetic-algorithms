@@ -63,25 +63,33 @@ class GeneticAlgoBool {
 	 * @return The minimum fitness value found.
 	 */
 	private int computeFitnessOnSample() {
-		double maxWeight = valFitArray[i][0];
-		double maxUtil = valFitArray[i][1];
-		int solutionIndex = -1;
+		double[] fit = Assess.getTest2(samp[0]);
+		double maxWeight = fit[0];
+		double maxUtil = fit[1];
+		int solutionIndex = 0;
+		double weight;
+		double util;
 
-		topFindedFitness = valFitArray[i];
-		solutionIndex = i;
 		for (int i = 0; i < popSize; i++) {
 			valFitArray[i] = Assess.getTest2(samp[i]);
-			if (valFitArray[i][0] <= 500) {
-				if (topFindedFitness[0] > 500) {
-					topFindedFitness = valFitArray[i];
-					solutionIndex = i;
-				} else if (valFitArray[i][1] > topFindedFitness[1]) {
-					topFindedFitness = valFitArray[i];
+			weight = valFitArray[i][0];
+			util = valFitArray[i][1];
+			if (weight > 500) {
+				if (weight < maxWeight) {
+					maxWeight = valFitArray[i][0];
+					maxUtil = valFitArray[i][1];
 					solutionIndex = i;
 				}
 			} else {
-				if (valFitArray[i][0] < topFindedFitness[0]) {
-					topFindedFitness = valFitArray[i];
+				if (maxWeight <= 500) {
+					if (util > maxUtil) {
+						maxWeight = valFitArray[i][0];
+						maxUtil = valFitArray[i][1];
+						solutionIndex = i;
+					}
+				} else {
+					maxWeight = valFitArray[i][0];
+					maxUtil = valFitArray[i][1];
 					solutionIndex = i;
 				}
 			}
@@ -94,34 +102,44 @@ class GeneticAlgoBool {
 	 * @return The selected solution
 	 */
 	private boolean[] selection() {
-		double[] topFindedFitness = null;
-		int solutionIndex = -1;
-		int comparingIndex;
+		double weight;
+		double util;
 
+		int[] indexRdm = new int[nbrSampleSelection];
 		for (int i = 0; i < nbrSampleSelection; i++) {
-			comparingIndex = (int)(Math.random() * popSize);
-			if (comparingIndex >= popSize) {
-				comparingIndex = popSize - 1;
+			indexRdm[i] = (int)(Math.random() * popSize) % popSize;
+			while (indexRdm[i] >= popSize) {
+				indexRdm[i] = (int)(Math.random() * popSize) % popSize;
 			}
-			if (topFindedFitness == null) {
-				topFindedFitness = valFitArray[comparingIndex];
-				solutionIndex = comparingIndex;
-			} else if (valFitArray[comparingIndex][0] <= 500) {
-				if (topFindedFitness[0] > 500) {
-					topFindedFitness = valFitArray[comparingIndex];
-					solutionIndex = comparingIndex;
-				} else if (valFitArray[comparingIndex][1] > topFindedFitness[1]) {
-					topFindedFitness = valFitArray[comparingIndex];
-					solutionIndex = comparingIndex;
+		}
+		double[] fit = Assess.getTest2(samp[indexRdm[0]]);
+		double maxWeight = fit[0];
+		double maxUtil = fit[1];
+		int solutionIndex = indexRdm[0];
+
+		for (int j = 0; j < nbrSampleSelection; j++) {
+			weight = valFitArray[indexRdm[j]][0];
+			util = valFitArray[indexRdm[j]][1];
+			if (weight > 500) {
+				if (weight < maxWeight) {
+					maxWeight = weight;
+					maxUtil = util;
+					solutionIndex = indexRdm[j];
 				}
 			} else {
-				if (valFitArray[comparingIndex][0] < topFindedFitness[0]) {
-					topFindedFitness = valFitArray[comparingIndex];
-					solutionIndex = comparingIndex;
+				if (maxWeight <= 500) {
+					if (util > maxUtil) {
+						maxWeight = weight;
+						maxUtil = util;
+						solutionIndex = indexRdm[j];
+					}
+				} else {
+					maxWeight = weight;
+					maxUtil = util;
+					solutionIndex = indexRdm[j];
 				}
 			}
 		}
-		//System.out.println(bestFitness[0]);
 		return samp[solutionIndex].clone();
 	}
 

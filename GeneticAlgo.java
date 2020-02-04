@@ -111,12 +111,14 @@ class GeneticAlgo {
 		double min = valFitArray[0];
 		int selected_samp = 0;
 		int tmp;
-
+		int[] indexRdm = new int[nbrSampleSelection];
 		for (int i = 0; i < nbrSampleSelection; i++) {
-			tmp = random_in_range(popSize);
-			if (min > valFitArray[tmp]) {
-				min = valFitArray[tmp];
-				selected_samp = tmp;
+			indexRdm[i] = random_in_range(popSize);
+		}
+		for (int i = 0; i < nbrSampleSelection; i++) {
+			if (min > valFitArray[indexRdm[i]]) {
+				min = valFitArray[indexRdm[i]];
+				selected_samp = indexRdm[i];
 			}
 		}
 		converge_fct(min, selected_samp);
